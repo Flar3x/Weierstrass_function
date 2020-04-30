@@ -1,0 +1,101 @@
+#Initilize in notebook
+
+import numpy as np
+import plotly.graph_objects as go
+
+#Functions defined here
+
+#create function that will compute y value for any a, n, b, x
+def mini_weierstrass(a, n, b, x):
+    pre_cos_term = a**n
+    cos_term = np.cos((b**n) * np.pi * x)
+    return pre_cos_term * cos_term
+
+#create function that will sum over all y value for every n at constant a, b, x; i.e summation
+def grand_weierstrass(a, n_max, b, x):
+    result = {}
+    for i in range(0, n_max+1):
+        proxy = mini_weierstrass(a, i, b, x)
+        result[i] = proxy
+    
+    temp = result.values()
+    return sum(temp)
+
+#Constants defined here
+
+#set a value
+a = 0.5
+
+#Create range of x coords
+dx = 0.001
+x_range = np.arange(-2, 2, dx)
+
+#Create range of b values
+#**plotly can plot graph when db = 0.01 but will become very slow. Hence, set db = 0.1 first
+db = 0.1
+b_range = np.arange(0, 10, db)
+
+fig = go.Figure()
+
+#add trace for every b value
+for b in b_range:
+    y_range = grand_weierstrass(a, 100, b, x_range)
+    fig.add_trace(
+        go.Scatter(
+            x = x_range,
+            y = y_range,
+            line = dict(color="#00CED1", width=1),
+            name = "b = "+str(b),
+            visible = False
+        )
+    )
+
+#make plot when b = 0 be visible
+fig.data[0].visible = True
+
+#Create and add slider
+steps = []
+for i in range(len(fig.data)):
+    #For every step, only turn 1 graph visible = True and the rest still visible = False
+    step = dict(
+        method = "update",
+        value = round(i * 0.1, 2),
+        label = round(i * 0.1, 2),
+        args=[
+            {"visible": [False] * len(fig.data)}]  #args can only accept 3 elements max. To set layout attribute.
+    )
+    step["args"][0]["visible"][i] = True  # Toggle i'th trace to "visible"
+    steps.append(step)
+
+sliders = [dict(
+    active = 10,
+    currentvalue = {"prefix": "b = "},
+    pad={"t": 50},
+    steps=steps
+    )]
+
+fig.update_layout(
+    title = {
+        "text": r"$$f(x)=\sum_{n=0}^{100}\frac{1}{2^n}cos(b^n{\pi}x)$$",
+        "y": 0.89,
+        "x": 0.5,
+    },
+    xaxis_title = r"$x$",
+    yaxis_title = r"$f(x)$",
+    xaxis = {
+        "tickmode": "linear",
+        "tick0": 0,
+        "dtick": 0.5,
+        "tickformat":".2f"
+    },
+    sliders=sliders,
+    yaxis = {
+        "tickmode": "linear",
+        "tick0": 0,
+        "dtick": 0.5,
+        "tickformat": ".2f"
+    }
+)
+
+
+fig.show()
